@@ -39,4 +39,20 @@ class TodoItem {
       };
 
   TodoItem toggleDone() => copyWith(done: !done);
+
+  bool get isDone => done;
+
+  bool get isNotDone => !done;
+
+  bool get canExpand => (hasDescription || hasDateTime);
+
+  bool get hasDescription => description != null;
+
+  bool get hasDateTime => dateTime != null;
+
+  bool matches(TodoItem? other) {
+    if (other == null) return false;
+
+    return other.title == title && other.description == description && other.dateTime == dateTime;
+  }
 }

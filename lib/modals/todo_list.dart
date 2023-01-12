@@ -10,13 +10,16 @@ class TodoList {
         json['title'] as String,
       ).._items = (json['items'] as List<dynamic>).map((e) => TodoItem.fromJson(e)).toList();
 
+  List<TodoItem> get items => [..._items];
+
   Map<String, dynamic> toJson() => {
         'title': title,
         'items': _items,
       };
 
   bool addItem(TodoItem item, [int? index]) {
-    if (_items.map((e) => e.title).contains(item.title)) {
+    String title = item.title.toLowerCase();
+    if (_containsTitle(title)) {
       return false;
     }
     if (index == null) {
@@ -35,7 +38,18 @@ class TodoList {
     return _items.removeAt(index);
   }
 
-  void toggleDone(int index) {
+  void toggleDone(String title) {
+    int index = _items.indexWhere((element) => element.title == title);
     _items[index] = _items[index].toggleDone();
+  }
+
+  bool _containsTitle(String title) => _items.map((e) => e.title.toLowerCase()).contains(title);
+
+  bool checkIfTitleIsApplicable(String title) {
+    return !_containsTitle(title);
+  }
+
+  void editItem(TodoItem newItem) {
+    _items[_items.indexWhere((element) => element.title == newItem.title)] = newItem;
   }
 }
