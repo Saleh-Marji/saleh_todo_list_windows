@@ -29,7 +29,7 @@ class _TabsWidgetState extends State<TabsWidget> {
       onPointerSignal: (event) {
         if (event is PointerScrollEvent) {
           scrollController.animateTo(scrollController.offset + event.scrollDelta.dy,
-              duration: Duration(milliseconds: 2), curve: Curves.bounceIn);
+              duration: const Duration(milliseconds: 2), curve: Curves.bounceIn);
         }
       },
       child: Container(
@@ -39,81 +39,83 @@ class _TabsWidgetState extends State<TabsWidget> {
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
+            SizedBox(
               height: 30,
               child: m.Theme(
                 data: m.ThemeData(
                   canvasColor: Colors.transparent,
                 ),
                 child: GetBuilder<TodoListsController>(
-                    init: controller,
-                    builder: (controller) {
-                      var lists = controller.currentlyInTabs;
-                      String? currentTab = controller.currentlySelectedTabTitle;
-                      return ReorderableListView.builder(
-                        scrollController: scrollController,
-                        scrollDirection: Axis.horizontal,
-                        buildDefaultDragHandles: false,
-                        shrinkWrap: true,
-                        itemCount: lists.length,
-                        itemBuilder: (_, index) {
-                          bool isSelected = currentTab == lists[index].title;
-                          return ReorderableDragStartListener(
-                            key: ValueKey(lists[index].title),
-                            index: index,
-                            child: GestureDetector(
-                              onTap: () {
-                                controller.selectTab(lists[index].title);
-                              },
+                  init: controller,
+                  builder: (controller) {
+                    var lists = controller.currentlyInTabs;
+                    String? currentTab = controller.currentlySelectedTabTitle;
+                    return ReorderableListView.builder(
+                      scrollController: scrollController,
+                      scrollDirection: Axis.horizontal,
+                      buildDefaultDragHandles: false,
+                      shrinkWrap: true,
+                      itemCount: lists.length,
+                      itemBuilder: (_, index) {
+                        bool isSelected = currentTab == lists[index].title;
+                        return ReorderableDragStartListener(
+                          key: ValueKey(lists[index].title),
+                          index: index,
+                          child: GestureDetector(
+                            onTap: () {
+                              controller.selectTab(lists[index].title);
+                            },
+                            child: Container(
+                              margin: EdgeInsets.only(right: 2.5, left: index == 0 ? 5 : 2.5),
+                              decoration: const BoxDecoration(
+                                color: kColorMainLight,
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 1).copyWith(top: 1),
                               child: Container(
-                                margin: EdgeInsets.only(right: 2.5, left: index == 0 ? 5 : 2.5),
+                                width: 200,
+                                height: 30,
+                                padding: const EdgeInsets.only(left: 10),
                                 decoration: BoxDecoration(
-                                  color: kColorMainLight,
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                                  color: isSelected ? kColorMainLight : kColorMain,
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
                                 ),
-                                padding: EdgeInsets.symmetric(horizontal: 1).copyWith(top: 1),
-                                child: Container(
-                                  width: 200,
-                                  height: 30,
-                                  padding: EdgeInsets.only(left: 10),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? kColorMainLight : kColorMain,
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          lists[index].title,
-                                          style: kTextStyleMain.copyWith(
-                                            fontSize: 16,
-                                            color: isSelected ? Colors.black : Colors.white.withOpacity(0.8),
-                                          ),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(
-                                          FluentIcons.chrome_close,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        lists[index].title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: kTextStyleMain.copyWith(
+                                          fontSize: 16,
                                           color: isSelected ? Colors.black : Colors.white.withOpacity(0.8),
                                         ),
-                                        onPressed: () {
-                                          controller.removeTabAt(index);
-                                        },
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        FluentIcons.chrome_close,
+                                        color: isSelected ? Colors.black : Colors.white.withOpacity(0.8),
+                                      ),
+                                      onPressed: () {
+                                        controller.removeTabAt(index);
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          );
-                        },
-                        onReorder: (oldIndex, newIndex) {
-                          if (newIndex > oldIndex) newIndex--;
-                          controller.moveToIndex(oldIndex, newIndex);
-                          // setState(() {});
-                        },
-                      );
-                    }),
+                          ),
+                        );
+                      },
+                      onReorder: (oldIndex, newIndex) {
+                        if (newIndex > oldIndex) newIndex--;
+                        controller.moveTabToIndex(oldIndex, newIndex);
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],

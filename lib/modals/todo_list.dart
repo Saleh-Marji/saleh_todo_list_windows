@@ -1,7 +1,9 @@
+import 'dart:math';
+
 import 'package:saleh_todo_list_windows/modals/todo_item.dart';
 
 class TodoList {
-  final String title;
+  String title;
   List<TodoItem> _items = [];
 
   TodoList(this.title);
@@ -49,7 +51,15 @@ class TodoList {
     return !_containsTitle(title);
   }
 
-  void editItem(TodoItem newItem) {
-    _items[_items.indexWhere((element) => element.title == newItem.title)] = newItem;
+  void editItem(TodoItem newItem, String oldTitle) {
+    _items[_items.indexWhere((element) => element.title == oldTitle)] = newItem;
+  }
+
+  void addAfter(String titleAfter, TodoItem item) {
+    _items.insert(_items.indexWhere((element) => element.title == titleAfter) + 1, item);
+  }
+
+  void addBefore(String titleBefore, TodoItem item) {
+    _items.insert(max(0, _items.indexWhere((element) => element.title == titleBefore)), item);
   }
 }

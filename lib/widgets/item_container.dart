@@ -31,10 +31,11 @@ class _ItemContainerState extends State<ItemContainer> {
     return mat.Material(
       color: Colors.transparent,
       child: mat.ListTile(
+        tileColor: kColorMainLight,
         onLongPress: widget.onLongPressed,
         onTap: widget.onPressed,
         title: Padding(
-          padding: EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.only(bottom: 10),
           child: Text(
             widget.item.title,
             style: kTextStyleMain.copyWith(
@@ -46,7 +47,7 @@ class _ItemContainerState extends State<ItemContainer> {
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Divider(
+                  const Divider(
                     style: DividerThemeData(
                       horizontalMargin: EdgeInsets.only(right: 10),
                       thickness: 1,
@@ -55,7 +56,7 @@ class _ItemContainerState extends State<ItemContainer> {
                       ),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
                   if (widget.item.hasDateTime)
@@ -68,7 +69,7 @@ class _ItemContainerState extends State<ItemContainer> {
                       widget.item.description!,
                       style: kTextStyleMain.copyWith(fontSize: 20),
                     ),
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
                 ],
@@ -76,7 +77,7 @@ class _ItemContainerState extends State<ItemContainer> {
             : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: kColorMain),
+          side: const BorderSide(color: kColorMain),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -94,7 +95,7 @@ class _ItemContainerState extends State<ItemContainer> {
                   });
                 },
               ),
-            if (widget.item.canExpand) SizedBox(width: 10),
+            if (widget.item.canExpand) const SizedBox(width: 10),
             CustomCheckbox(
               checked: widget.item.done,
               onChanged: (val) {

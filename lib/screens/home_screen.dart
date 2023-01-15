@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart' as m;
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:saleh_todo_list_windows/controllers/lists_controller.dart';
 import 'package:saleh_todo_list_windows/modals/todo_item.dart';
@@ -13,6 +14,30 @@ import '../widgets/screen_widgets/drawer.dart';
 import '../widgets/screen_widgets/tabs_widget.dart';
 
 final controller = Get.find<TodoListsController>();
+
+bool isAdding = false;
+
+void onAddPressed(BuildContext context) async {
+  if (isAdding) {
+    return;
+  }
+  isAdding = true;
+  TodoItem? result = await showItemDialog(context);
+  if (result != null) {
+    controller.addItem(result);
+  }
+  isAdding = false;
+}
+
+Future<TodoItem?> showItemDialog(BuildContext context, [TodoItem? initialItem]) async {
+  return Dialogs.showChildDialog(
+    context,
+    initialItem != null ? 'Edit Item' : 'Add Item',
+    _TodoItemDialog(
+      item: initialItem,
+    ),
+  );
+}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -31,7 +56,7 @@ class HomeScreen extends StatelessWidget {
               ),
             );
           }
-          return _HomeWidget();
+          return const _HomeWidget();
         },
       ),
     );
@@ -44,7 +69,7 @@ class _HomeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: [
+      children: const [
         Drawer(),
         Expanded(child: _MainWidget()),
       ],
@@ -74,7 +99,7 @@ class _MainWidget extends StatelessWidget {
 
   Widget _currentList(BuildContext context, TodoList? currentList) {
     if (currentList == null) {
-      return Center(
+      return const Center(
         child: Text(
           'Select a list or add one!',
           style: kTextStyleMain,
@@ -96,7 +121,7 @@ class _MainWidget extends StatelessWidget {
           Expanded(
             child: Builder(builder: (context) {
               if (items.isEmpty) {
-                return Center(
+                return const Center(
                   child: Text(
                     'No Todos Yet! Please add some todos!',
                     style: kTextStyleMain,
@@ -111,54 +136,115 @@ class _MainWidget extends StatelessWidget {
 
               items = [...notDone, ...done];
 
+              int lastNotDoneIndex = notDone.length - 1;
+
               int count = items.length + (notDone.isNotEmpty ? 1 : 0) + (done.isNotEmpty ? 1 : 0);
 
-              return ListView.builder(
-                itemCount: count,
-                itemBuilder: (_, index) {
-                  if (index == 0 && notDone.isNotEmpty) {
-                    return _title('Not Done (${notDone.length})');
-                  } else if (notDone.isNotEmpty) {
-                    index--;
-                  }
-                  if (index == notDone.length && done.isNotEmpty) {
-                    return _title('Done (${done.length})');
-                  } else if (index > notDone.length && done.isNotEmpty) {
-                    index--;
-                  }
-                  var item = items[index];
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 10),
-                    child: ItemContainer(
-                      item,
-                      onDoneChanged: (done) {
-                        controller.toggleDone(item.title);
-                      },
-                      onPressed: () async {
-                        TodoItem? result = await showItemDialog(context, item);
-                        if (result != null) {
-                          controller.editTodo(result, forceEdit: true);
-                        }
-                      },
-                      onLongPressed: () async {
-                        bool? ok = await Dialogs.showConfirmationDialog(
-                          context,
-                          'Are you sure you want to delete this todo?',
-                        );
+              return m.Theme(
+                data: m.ThemeData(
+                  shadowColor: Colors.transparent,
+                  canvasColor: Colors.transparent,
+                ),
+                child: ReorderableListView.builder(
+                  shrinkWrap: true,
+                  buildDefaultDragHandles: false,
+                  onReorderStart: (index) {
+                    index++;
+                  },
+                  onReorder: (oldIndex, newIndex) {
+                    //clear out indices of titles
+                    if (newIndex > oldIndex) newIndex--;
+                    if (notDone.isNotEmpty) {
+                      oldIndex--;
+                      newIndex--;
+                    }
+                    if (oldIndex > lastNotDoneIndex) {
+                      oldIndex--;
+                    }
+                    if (newIndex > lastNotDoneIndex) {
+                      newIndex--;
+                    }
+                    //now compare to see in which case are we
+                    //moving forward?
+                    //or backwards
+                    bool doneOfHeldItem = oldIndex > lastNotDoneIndex;
+                    if (doneOfHeldItem && newIndex < (lastNotDoneIndex + 1)) {
+                      newIndex = lastNotDoneIndex + 1;
+                    } else if (!doneOfHeldItem && newIndex > lastNotDoneIndex) {
+                      newIndex = lastNotDoneIndex;
+                    }
+                    if (newIndex < 0) {
+                      newIndex = 0;
+                    }
+                    if (oldIndex == newIndex) {
+                      return;
+                    }
+                    TodoItem heldItem = items[oldIndex];
+                    if (newIndex > oldIndex) {
+                      //moving forward
+                      String title = items[newIndex].title;
+                      controller.moveTaskToAfterTitle(title, heldItem);
+                    } else {
+                      //moving backwards
+                      String title = items[newIndex].title;
+                      controller.moveTaskToBeforeTitle(title, heldItem);
+                    }
+                  },
+                  itemCount: count,
+                  itemBuilder: (_, index) {
+                    int listIndex = index;
+                    if (index == 0 && notDone.isNotEmpty) {
+                      return _title(
+                        'Not Done (${notDone.length})',
+                      );
+                    } else if (notDone.isNotEmpty) {
+                      index--;
+                    }
+                    if (index == notDone.length && done.isNotEmpty) {
+                      return _title(
+                        'Done (${done.length})',
+                      );
+                    } else if (index > notDone.length && done.isNotEmpty) {
+                      index--;
+                    }
+                    var item = items[index];
+                    return ReorderableDragStartListener(
+                      key: ValueKey('${currentList.title}-${item.title}'),
+                      index: listIndex,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ItemContainer(
+                          item,
+                          onDoneChanged: (done) {
+                            controller.toggleDone(item.title);
+                          },
+                          onPressed: () async {
+                            TodoItem? result = await showItemDialog(context, item);
+                            if (result != null) {
+                              controller.editTodo(result, item.title);
+                            }
+                          },
+                          onLongPressed: () async {
+                            bool? ok = await Dialogs.showConfirmationDialog(
+                              context,
+                              'Are you sure you want to delete this todo?',
+                            );
 
-                        if (!(ok ?? false)) {
-                          return;
-                        }
+                            if (!(ok ?? false)) {
+                              return;
+                            }
 
-                        controller.deleteTodo(item.title);
-                      },
-                    ),
-                  );
-                },
+                            controller.deleteTodo(item.title);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
             }),
           ),
-          SizedBox(
+          const SizedBox(
             height: 16,
           ),
           Column(
@@ -178,15 +264,12 @@ class _MainWidget extends StatelessWidget {
                           textAlign: TextAlign.left,
                         ),
                       ),
-                      Icon(FluentIcons.add),
+                      const Icon(FluentIcons.add),
                     ],
                   ),
                 ),
                 onPressed: () async {
-                  TodoItem? result = await showItemDialog(context);
-                  if (result != null) {
-                    controller.addItem(result);
-                  }
+                  onAddPressed(context);
                 },
               ),
             ],
@@ -197,18 +280,19 @@ class _MainWidget extends StatelessWidget {
   }
 
   Widget _title(String title) => Column(
+        key: ValueKey(title),
         children: [
-          SizedBox(
+          const SizedBox(
             height: 16,
           ),
           Text(
             '$title:',
             style: kTextStyleMain,
           ),
-          SizedBox(
+          const SizedBox(
             height: 10,
           ),
-          Divider(
+          const Divider(
             style: DividerThemeData(
               horizontalMargin: EdgeInsets.zero,
               decoration: BoxDecoration(
@@ -216,21 +300,11 @@ class _MainWidget extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 20,
           ),
         ],
       );
-
-  Future<TodoItem?> showItemDialog(BuildContext context, [TodoItem? initialItem]) async {
-    return Dialogs.showChildDialog(
-      context,
-      initialItem != null ? 'Edit Item' : 'Add Item',
-      _TodoItemDialog(
-        item: initialItem,
-      ),
-    );
-  }
 }
 
 class _TodoItemDialog extends StatefulWidget {
@@ -242,13 +316,15 @@ class _TodoItemDialog extends StatefulWidget {
   State<_TodoItemDialog> createState() => _TodoItemDialogState();
 }
 
+bool errorOccurred = false;
+
 class _TodoItemDialogState extends State<_TodoItemDialog> {
   late TodoItem item;
 
   @override
   void initState() {
     super.initState();
-    item = widget.item ?? TodoItem(title: '');
+    item = widget.item ?? const TodoItem(title: '');
   }
 
   @override
@@ -257,7 +333,7 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         TextBox(
           header: 'Title',
           headerStyle: kTextStyleMain.copyWith(fontSize: 22),
@@ -270,11 +346,11 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
           style: kTextStyleMain.copyWith(fontSize: 20),
           maxLines: 1,
           minLines: 1,
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
           foregroundDecoration:
               BoxDecoration(border: Border.all(color: kColorMain), borderRadius: BorderRadius.circular(5)),
         ),
-        SizedBox(height: 40),
+        const SizedBox(height: 40),
         TextBox(
           // expands: true,
           header: 'Description',
@@ -288,11 +364,11 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
             });
           },
           style: kTextStyleMain.copyWith(fontSize: 20),
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
           foregroundDecoration:
               BoxDecoration(border: Border.all(color: kColorMain), borderRadius: BorderRadius.circular(5)),
         ),
-        SizedBox(height: 40),
+        const SizedBox(height: 40),
         GestureDetector(
           onTap: () async {
             DateTime? result = await m.showDatePicker(
@@ -306,7 +382,6 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
                     colorScheme: m.ColorScheme.light(
                       primary: kColorMain,
                       onPrimary: Colors.white.withOpacity(0.9),
-                      // onSurface: kColorMainLight, // <-- SEE HERE
                     ),
                   ),
                   child: child!,
@@ -327,7 +402,7 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
                 style: kTextStyleMain.copyWith(fontSize: 22),
                 textAlign: TextAlign.left,
               ),
-              SizedBox(
+              const SizedBox(
                 height: 5,
               ),
               Container(
@@ -336,7 +411,7 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
                   borderRadius: BorderRadius.circular(5),
                   border: Border.all(color: kColorMain),
                 ),
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                 child: Text(
                   item.dateTime != null ? Utils.dateTimeToString(item.dateTime!) : 'Tap to select Date',
                   style: kTextStyleMain.copyWith(fontSize: 20),
@@ -345,7 +420,7 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
             ],
           ),
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Row(
           children: Dialogs.getButtons(
             {
@@ -356,14 +431,12 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
                 }
 
                 bool ok = controller.currentList!.checkIfTitleIsApplicable(item.title);
-                if (!ok && !item.matches(widget.item) && widget.item?.title != item.title) {
-                  bool? ok = await Dialogs.showConfirmationDialog(
+                if (!ok && !(item.title.toLowerCase() == widget.item?.title.toLowerCase())) {
+                  Dialogs.showAlertDialog(
                     context,
-                    'This title already exists. Are you sure you want to override it?',
+                    'An item with this title already exists! Kindly Enter another title',
                   );
-                  if (!(ok ?? false)) {
-                    return;
-                  }
+                  return;
                 }
                 if (mounted) Navigator.pop(context, item);
               },
@@ -372,7 +445,7 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
           ).map<Widget>((e) => Expanded(child: e)).toList()
             ..insert(
               1,
-              SizedBox(
+              const SizedBox(
                 width: 10,
               ),
             ),

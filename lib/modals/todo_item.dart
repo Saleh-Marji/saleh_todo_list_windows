@@ -38,6 +38,11 @@ class TodoItem {
         'done': done,
       };
 
+  @override
+  String toString() {
+    return title;
+  }
+
   TodoItem toggleDone() => copyWith(done: !done);
 
   bool get isDone => done;

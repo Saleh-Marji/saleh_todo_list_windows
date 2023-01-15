@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' as m;
 import 'package:get/get.dart';
 import 'package:saleh_todo_list_windows/controllers/lists_controller.dart';
 import 'package:saleh_todo_list_windows/widgets/dialogs.dart';
@@ -22,7 +23,7 @@ class DrawerState extends State<Drawer> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(right: BorderSide(color: kColorMain)),
       ),
@@ -33,10 +34,10 @@ class DrawerState extends State<Drawer> {
           Container(
             height: 250,
             color: kColorMainLight.withOpacity(0.4),
-            padding: EdgeInsets.all(50),
+            padding: const EdgeInsets.all(50),
             child: wGetLogoWidget(),
           ),
-          Divider(
+          const Divider(
             style: DividerThemeData(
                 horizontalMargin: EdgeInsets.zero,
                 decoration: BoxDecoration(
@@ -44,8 +45,8 @@ class DrawerState extends State<Drawer> {
                 )),
           ),
           ListTile(
-            leading: Icon(FluentIcons.add),
-            title: Text('Add List'),
+            leading: const Icon(FluentIcons.add),
+            title: const Text('Add List'),
             onPressed: () async {
               String? title = await Dialogs.showChildDialog(context, 'Add List', const _AddListDialog());
               if (title != null) {
@@ -53,7 +54,7 @@ class DrawerState extends State<Drawer> {
               }
             },
           ),
-          ListTile(
+          const ListTile(
             leading: Icon(FluentIcons.list),
             title: Text('Todo Lists'),
           ),
@@ -62,31 +63,60 @@ class DrawerState extends State<Drawer> {
             builder: (controller) {
               List<TodoList> lists = controller.lists;
               return Expanded(
-                child: ListView.builder(
-                  itemCount: lists.length,
-                  itemBuilder: (_, index) {
-                    return ListTile(
-                      title: Text('- ${lists[index].title}'),
-                      onPressed: () {
-                        controller.openListInTab(index);
-                      },
-                      trailing: IconButton(
-                        icon: Icon(FluentIcons.delete),
-                        onPressed: () async {
-                          bool? ok = await Dialogs.showConfirmationDialog(
-                            context,
-                            'Are you sure you want to delete this todo list?',
-                          );
+                child: m.Material(
+                  color: Colors.transparent,
+                  child: GetBuilder<TodoListsController>(
+                      init: Get.find<TodoListsController>(),
+                      builder: (controller) {
+                        return ReorderableListView.builder(
+                          buildDefaultDragHandles: false,
+                          onReorder: (oldIndex, newIndex) {
+                            if (newIndex > oldIndex) newIndex--;
+                            controller.reorderList(oldIndex, newIndex);
+                          },
+                          itemCount: lists.length,
+                          itemBuilder: (_, index) {
+                            return ReorderableDragStartListener(
+                              index: index,
+                              key: ValueKey(lists[index].title),
+                              child: m.ListTile(
+                                title: Text('- ${lists[index].title}'),
+                                onTap: () {
+                                  controller.openListInTab(index);
+                                },
+                                onLongPress: () async {
+                                  String oldTitle = lists[index].title;
+                                  String? newTitle = await Dialogs.showChildDialog(
+                                    context,
+                                    'Edit List Name',
+                                    _AddListDialog(
+                                      initialTitle: oldTitle,
+                                    ),
+                                  );
+                                  if (newTitle != null) {
+                                    controller.editListTitle(oldTitle, newTitle);
+                                  }
+                                },
+                                trailing: IconButton(
+                                  icon: const Icon(FluentIcons.delete),
+                                  onPressed: () async {
+                                    bool? ok = await Dialogs.showConfirmationDialog(
+                                      context,
+                                      'Are you sure you want to delete this todo list?',
+                                    );
 
-                          if (!(ok ?? false)) {
-                            return;
-                          }
+                                    if (!(ok ?? false)) {
+                                      return;
+                                    }
 
-                          controller.deleteList(lists[index].title);
-                        },
-                      ),
-                    );
-                  },
+                                    controller.deleteList(lists[index].title);
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }),
                 ),
               );
             },
@@ -98,21 +128,32 @@ class DrawerState extends State<Drawer> {
 }
 
 class _AddListDialog extends StatefulWidget {
-  const _AddListDialog({Key? key}) : super(key: key);
+  const _AddListDialog({
+    Key? key,
+    this.initialTitle,
+  }) : super(key: key);
+
+  final String? initialTitle;
 
   @override
   State<_AddListDialog> createState() => _AddListDialogState();
 }
 
 class _AddListDialogState extends State<_AddListDialog> {
-  String title = '';
+  late String title;
+
+  @override
+  void initState() {
+    super.initState();
+    title = widget.initialTitle ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         TextBox(
           header: 'Title',
           headerStyle: kTextStyleMain.copyWith(fontSize: 22),
@@ -125,11 +166,11 @@ class _AddListDialogState extends State<_AddListDialog> {
           style: kTextStyleMain.copyWith(fontSize: 20),
           maxLines: 1,
           minLines: 1,
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
           foregroundDecoration:
               BoxDecoration(border: Border.all(color: kColorMain), borderRadius: BorderRadius.circular(5)),
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Row(
           children: Dialogs.getButtons(
             {
@@ -140,7 +181,7 @@ class _AddListDialogState extends State<_AddListDialog> {
                 }
 
                 bool ok = !controller.checkIfListTitleExists(title);
-                if (!ok) {
+                if (!ok && (title.toLowerCase() != widget.initialTitle?.toLowerCase())) {
                   Dialogs.showAlertDialog(
                     context,
                     'This list already exists. Please write another title!',
@@ -154,7 +195,7 @@ class _AddListDialogState extends State<_AddListDialog> {
           ).map<Widget>((e) => Expanded(child: e)).toList()
             ..insert(
               1,
-              SizedBox(
+              const SizedBox(
                 width: 10,
               ),
             ),

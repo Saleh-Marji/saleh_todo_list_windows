@@ -3,9 +3,9 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:get/get.dart';
-import 'package:saleh_todo_list_windows/constants.dart';
 import 'package:saleh_todo_list_windows/modals/todo_item.dart';
 
+import '../constants.dart';
 import '../modals/todo_list.dart';
 
 class TodoListsController extends GetxController {
@@ -54,7 +54,6 @@ class TodoListsController extends GetxController {
     _isLoading = true;
     super.update();
     File file = File(await kFilePath);
-    print(file.existsSync());
     if (file.existsSync()) {
       Map<String, dynamic> json = jsonDecode(file.readAsStringSync());
       for (Map<String, dynamic> listJson in json['lists'] as List<dynamic>) {
@@ -83,7 +82,6 @@ class TodoListsController extends GetxController {
     File file = File(await kFilePath);
     String json =
         '{"lists" : ${jsonEncode(_list)}, "tabs" : ${jsonEncode(_currentlyInTabs.map((e) => e.title).toList())}, "currentTab" : "$_currentlySelectedTabTitle"}';
-    print(json);
     file.writeAsStringSync(json);
   }
 
@@ -135,9 +133,29 @@ class TodoListsController extends GetxController {
     return (list ?? _list).map((e) => e.title.toLowerCase()).contains(title);
   }
 
-  void moveToIndex(int oldIndex, int newIndex) {
+  void moveTabToIndex(int oldIndex, int newIndex) {
     TodoList list = _currentlyInTabs.removeAt(oldIndex);
     _currentlyInTabs.insert(newIndex, list);
+    update();
+  }
+
+  void moveTaskToAfterTitle(String titleAfter, TodoItem itemToAdd) {
+    TodoList? list = currentList;
+    if (list == null) {
+      return;
+    }
+    list.remove(itemToAdd.title);
+    list.addAfter(titleAfter, itemToAdd);
+    update();
+  }
+
+  void moveTaskToBeforeTitle(String titleBefore, TodoItem itemToAdd) {
+    TodoList? list = currentList;
+    if (list == null) {
+      return;
+    }
+    list.remove(itemToAdd.title);
+    list.addBefore(titleBefore, itemToAdd);
     update();
   }
 
@@ -164,14 +182,12 @@ class TodoListsController extends GetxController {
     update();
   }
 
-  void editTodo(TodoItem result, {bool? forceEdit}) {
+  void editTodo(TodoItem result, String oldTitle) {
     if (currentList == null) {
       return;
     }
-    if (!currentList!.checkIfTitleIsApplicable(result.title) && !(forceEdit ?? false)) {
-      return;
-    }
-    currentList!.editItem(result);
+    // currentList!.editItem(result);
+    _list[_list.indexWhere((element) => element.title == currentlySelectedTabTitle)].editItem(result, oldTitle);
     update();
   }
 
@@ -193,6 +209,7 @@ class TodoListsController extends GetxController {
     _list.removeWhere((element) => element.title == title);
     int index = _currentlyInTabs.indexWhere((element) => element.title == title);
     if (index == -1) {
+      update();
       return;
     }
     _currentlyInTabs.removeAt(index);
@@ -203,6 +220,19 @@ class TodoListsController extends GetxController {
         _currentlySelectedTabTitle = _currentlyInTabs[min(index, _currentlyInTabs.length - 1)].title;
       }
     }
+    update();
+  }
+
+  void reorderList(int oldIndex, int newIndex) {
+    TodoList list = _list.removeAt(oldIndex);
+    _list.insert(newIndex, list);
+    update();
+  }
+
+  void editListTitle(String oldTitle, String newTitle) {
+    bool isSelected = _currentlySelectedTabTitle == oldTitle;
+    _list[_list.indexWhere((element) => element.title == oldTitle)].title = newTitle;
+    if (isSelected) _currentlySelectedTabTitle = newTitle;
     update();
   }
 }

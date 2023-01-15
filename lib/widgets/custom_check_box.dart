@@ -23,30 +23,28 @@ class CustomCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: InkWell(
-        onTap: () {
-          onChanged?.call(!checked);
-        },
-        child: Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: checked ? kColorMain : kColorMainLight,
-            border: Border.all(
-              color: kColorMain,
-              // width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(6.0),
+    return InkWell(
+      onTap: () {
+        onChanged?.call(!checked);
+      },
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: checked ? kColorMain : kColorMainLight,
+          border: Border.all(
+            color: kColorMain,
+            // width: 2.0,
           ),
-          child: checked
-              ? Icon(
-                  Icons.check,
-                  size: iconSize,
-                  color: checkColor ?? Colors.white,
-                )
-              : null,
+          borderRadius: BorderRadius.circular(6.0),
         ),
+        child: checked
+            ? Icon(
+                Icons.check,
+                size: iconSize,
+                color: checkColor ?? Colors.white,
+              )
+            : null,
       ),
     );
   }
