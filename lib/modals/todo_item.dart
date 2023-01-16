@@ -16,11 +16,13 @@ class TodoItem {
     String? description,
     DateTime? dateTime,
     bool? done,
+    bool? clearDescription,
+    bool? clearDateTime,
   }) =>
       TodoItem(
         title: title ?? this.title,
-        description: description ?? this.description,
-        dateTime: dateTime ?? this.dateTime,
+        description: (clearDescription ?? false) ? null : description ?? this.description,
+        dateTime: (clearDateTime ?? false) ? null : dateTime ?? this.dateTime,
         done: done ?? this.done,
       );
 

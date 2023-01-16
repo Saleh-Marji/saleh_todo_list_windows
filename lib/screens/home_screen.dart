@@ -218,7 +218,7 @@ class _MainWidget extends StatelessWidget {
                           onDoneChanged: (done) {
                             controller.toggleDone(item.title);
                           },
-                          onPressed: () async {
+                          onEditPressed: () async {
                             TodoItem? result = await showItemDialog(context, item);
                             if (result != null) {
                               controller.editTodo(result, item.title);
@@ -356,11 +356,14 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
           header: 'Description',
           headerStyle: kTextStyleMain.copyWith(fontSize: 22),
           initialValue: widget.item?.description,
-          maxLines: 10,
+          maxLines: 5,
           minLines: 1,
           onChanged: (value) {
             setState(() {
-              item = item.copyWith(description: value);
+              item = item.copyWith(
+                clearDescription: value.isEmpty,
+                description: value,
+              );
             });
           },
           style: kTextStyleMain.copyWith(fontSize: 20),
@@ -397,10 +400,30 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Date',
-                style: kTextStyleMain.copyWith(fontSize: 22),
-                textAlign: TextAlign.left,
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Date',
+                    style: kTextStyleMain.copyWith(fontSize: 22),
+                    textAlign: TextAlign.left,
+                  ),
+                  Button(
+                    child: Text(
+                      'Clear',
+                      style: kTextStyleMain.copyWith(fontSize: 20),
+                    ),
+                    style: ButtonStyle(
+                      backgroundColor: ButtonState.all(kColorMainLight),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        item = item.copyWith(clearDateTime: true);
+                      });
+                    },
+                  )
+                ],
               ),
               const SizedBox(
                 height: 5,

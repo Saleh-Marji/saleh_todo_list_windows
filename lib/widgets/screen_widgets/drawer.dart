@@ -85,31 +85,31 @@ class DrawerState extends State<Drawer> {
                                   controller.openListInTab(index);
                                 },
                                 onLongPress: () async {
-                                  String oldTitle = lists[index].title;
-                                  String? newTitle = await Dialogs.showChildDialog(
+                                  bool? ok = await Dialogs.showConfirmationDialog(
                                     context,
-                                    'Edit List Name',
-                                    _AddListDialog(
-                                      initialTitle: oldTitle,
-                                    ),
+                                    'Are you sure you want to delete this todo list?',
                                   );
-                                  if (newTitle != null) {
-                                    controller.editListTitle(oldTitle, newTitle);
+
+                                  if (!(ok ?? false)) {
+                                    return;
                                   }
+
+                                  controller.deleteList(lists[index].title);
                                 },
                                 trailing: IconButton(
-                                  icon: const Icon(FluentIcons.delete),
+                                  icon: const Icon(FluentIcons.edit),
                                   onPressed: () async {
-                                    bool? ok = await Dialogs.showConfirmationDialog(
+                                    String oldTitle = lists[index].title;
+                                    String? newTitle = await Dialogs.showChildDialog(
                                       context,
-                                      'Are you sure you want to delete this todo list?',
+                                      'Edit List Name',
+                                      _AddListDialog(
+                                        initialTitle: oldTitle,
+                                      ),
                                     );
-
-                                    if (!(ok ?? false)) {
-                                      return;
+                                    if (newTitle != null) {
+                                      controller.editListTitle(oldTitle, newTitle);
                                     }
-
-                                    controller.deleteList(lists[index].title);
                                   },
                                 ),
                               ),

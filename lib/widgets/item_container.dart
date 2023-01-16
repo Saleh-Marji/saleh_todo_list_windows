@@ -10,13 +10,13 @@ class ItemContainer extends StatefulWidget {
     this.item, {
     Key? key,
     required this.onDoneChanged,
-    required this.onPressed,
+    required this.onEditPressed,
     required this.onLongPressed,
   }) : super(key: key);
 
   final TodoItem item;
   final void Function(bool done) onDoneChanged;
-  final VoidCallback onPressed;
+  final VoidCallback onEditPressed;
   final VoidCallback onLongPressed;
 
   @override
@@ -33,7 +33,13 @@ class _ItemContainerState extends State<ItemContainer> {
       child: mat.ListTile(
         tileColor: kColorMainLight,
         onLongPress: widget.onLongPressed,
-        onTap: widget.onPressed,
+        onTap: widget.item.canExpand
+            ? () {
+                setState(() {
+                  isExpanded = !isExpanded;
+                });
+              }
+            : null,
         title: Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: Text(
@@ -96,6 +102,16 @@ class _ItemContainerState extends State<ItemContainer> {
                 },
               ),
             if (widget.item.canExpand) const SizedBox(width: 10),
+            IconButton(
+              icon: Icon(
+                FluentIcons.edit,
+                size: 30,
+              ),
+              onPressed: () {
+                widget.onEditPressed();
+              },
+            ),
+            SizedBox(width: 10),
             CustomCheckbox(
               checked: widget.item.done,
               onChanged: (val) {
