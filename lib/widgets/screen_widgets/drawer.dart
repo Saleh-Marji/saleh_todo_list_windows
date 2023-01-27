@@ -80,7 +80,7 @@ class DrawerState extends State<Drawer> {
                               index: index,
                               key: ValueKey(lists[index].title),
                               child: m.ListTile(
-                                title: Text('- ${lists[index].title}'),
+                                title: Text('- ${lists[index].title} (${lists[index].unDoneCount})'),
                                 onTap: () {
                                   controller.openListInTab(index);
                                 },

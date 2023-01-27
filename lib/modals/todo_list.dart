@@ -14,6 +14,8 @@ class TodoList {
 
   List<TodoItem> get items => [..._items];
 
+  int get unDoneCount => _items.where((element) => !element.done).length;
+
   Map<String, dynamic> toJson() => {
         'title': title,
         'items': _items,

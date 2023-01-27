@@ -84,7 +84,7 @@ class _TabsWidgetState extends State<TabsWidget> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        lists[index].title,
+                                        '${lists[index].title} (${lists[index].unDoneCount})',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: kTextStyleMain.copyWith(
