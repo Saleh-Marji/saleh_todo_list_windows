@@ -54,9 +54,29 @@ class DrawerState extends State<Drawer> {
               }
             },
           ),
-          const ListTile(
-            leading: Icon(FluentIcons.list),
-            title: Text('Todo Lists'),
+          ListTile(
+            leading: const Icon(FluentIcons.list),
+            title: const Text('Todo Lists'),
+            trailing: IconButton(
+              icon: const Icon(FluentIcons.delete),
+              onPressed: () async {
+                bool? ok = await Dialogs.showConfirmationDialog(
+                  context,
+                  'Are you sure you want to delete all lists?',
+                );
+                if (!(ok ?? false)) {
+                  return;
+                }
+                ok = await Dialogs.showConfirmationDialog(
+                  context,
+                  'Dead sure??',
+                );
+                if (!(ok ?? false)) {
+                  return;
+                }
+                controller.deleteAllLists();
+              },
+            ),
           ),
           GetBuilder<TodoListsController>(
             init: controller,
@@ -140,29 +160,28 @@ class _AddListDialog extends StatefulWidget {
 }
 
 class _AddListDialogState extends State<_AddListDialog> {
-  late String title;
+  late final TextEditingController _titleController = TextEditingController(text: widget.initialTitle);
 
   @override
-  void initState() {
-    super.initState();
-    title = widget.initialTitle ?? '';
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 20),
+        // Text(
+        //   'Title',
+        //   style: _headerStyle,
+        // ),
+        // const SizedBox(height: 10),
         TextBox(
-          header: 'Title',
-          headerStyle: kTextStyleMain.copyWith(fontSize: 22),
-          initialValue: title,
-          onChanged: (value) {
-            setState(() {
-              title = value;
-            });
-          },
+          controller: _titleController,
           style: kTextStyleMain.copyWith(fontSize: 20),
           maxLines: 1,
           minLines: 1,
@@ -175,7 +194,8 @@ class _AddListDialogState extends State<_AddListDialog> {
           children: Dialogs.getButtons(
             {
               'Ok': () async {
-                if (title == '') {
+                String title = _titleController.text;
+                if (title.isBlank ?? true) {
                   Dialogs.showAlertDialog(context, 'Please write a title');
                   return;
                 }

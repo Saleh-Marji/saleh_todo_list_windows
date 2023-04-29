@@ -64,4 +64,8 @@ class TodoList {
   void addBefore(String titleBefore, TodoItem item) {
     _items.insert(max(0, _items.indexWhere((element) => element.title == titleBefore)), item);
   }
+
+  void empty() {
+    _items.clear();
+  }
 }

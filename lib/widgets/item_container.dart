@@ -68,12 +68,18 @@ class _ItemContainerState extends State<ItemContainer> {
                   if (widget.item.hasDateTime)
                     Text(
                       Utils.dateTimeToString(widget.item.dateTime!),
-                      style: kTextStyleMain.copyWith(fontSize: 20),
+                      style: kTextStyleMain.copyWith(
+                        fontSize: 20,
+                        decoration: widget.item.done ? TextDecoration.lineThrough : null,
+                      ),
                     ),
                   if (widget.item.hasDescription)
                     Text(
                       widget.item.description!,
-                      style: kTextStyleMain.copyWith(fontSize: 20),
+                      style: kTextStyleMain.copyWith(
+                        fontSize: 20,
+                        decoration: widget.item.done ? TextDecoration.lineThrough : null,
+                      ),
                     ),
                   const SizedBox(
                     height: 10,

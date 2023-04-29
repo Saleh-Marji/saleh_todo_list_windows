@@ -113,9 +113,28 @@ class _MainWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Todos:',
-            style: kTextStyleMain.copyWith(fontSize: 40),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Todos:',
+                  style: kTextStyleMain.copyWith(fontSize: 40),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(FluentIcons.delete, size: 30),
+                onPressed: () async {
+                  bool? ok = await Dialogs.showConfirmationDialog(
+                    context,
+                    'Are you sure you want to delete all todos of this list?',
+                  );
+                  if (!(ok ?? false)) {
+                    return;
+                  }
+                  controller.deleteAllTodosOfCurrentList();
+                },
+              )
+            ],
           ),
           Expanded(
             child: Builder(builder: (context) {
@@ -318,13 +337,18 @@ class _TodoItemDialog extends StatefulWidget {
 bool errorOccurred = false;
 
 class _TodoItemDialogState extends State<_TodoItemDialog> {
-  late TodoItem item;
+  late TodoItem item = widget.item ?? const TodoItem(title: '');
+  late final TextEditingController _titleController = TextEditingController(text: widget.item?.title),
+      _descriptionController = TextEditingController(text: widget.item?.description);
 
   @override
-  void initState() {
-    super.initState();
-    item = widget.item ?? const TodoItem(title: '');
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
+
+  TextStyle get _headerStyle => kTextStyleMain.copyWith(fontSize: 22);
 
   @override
   Widget build(BuildContext context) {
@@ -333,10 +357,13 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 20),
+        Text(
+          'Title',
+          style: _headerStyle,
+        ),
+        const SizedBox(height: 10),
         TextBox(
-          header: 'Title',
-          headerStyle: kTextStyleMain.copyWith(fontSize: 22),
-          initialValue: widget.item?.title,
+          controller: _titleController,
           onChanged: (value) {
             setState(() {
               item = item.copyWith(title: value);
@@ -346,15 +373,19 @@ class _TodoItemDialogState extends State<_TodoItemDialog> {
           maxLines: 1,
           minLines: 1,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-          foregroundDecoration:
-              BoxDecoration(border: Border.all(color: kColorMain), borderRadius: BorderRadius.circular(5)),
+          foregroundDecoration: BoxDecoration(
+            border: Border.all(color: kColorMain),
+            borderRadius: BorderRadius.circular(5),
+          ),
         ),
         const SizedBox(height: 40),
+        Text(
+          'Description',
+          style: _headerStyle,
+        ),
+        const SizedBox(height: 10),
         TextBox(
-          // expands: true,
-          header: 'Description',
-          headerStyle: kTextStyleMain.copyWith(fontSize: 22),
-          initialValue: widget.item?.description,
+          controller: _descriptionController,
           maxLines: 5,
           minLines: 1,
           onChanged: (value) {

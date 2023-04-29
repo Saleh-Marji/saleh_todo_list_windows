@@ -235,4 +235,18 @@ class TodoListsController extends GetxController {
     if (isSelected) _currentlySelectedTabTitle = newTitle;
     update();
   }
+
+  void deleteAllLists() {
+    _list.clear();
+    _currentlyInTabs.clear();
+    _currentlySelectedTabTitle = null;
+    update();
+  }
+
+  void deleteAllTodosOfCurrentList() {
+    var current = currentList;
+    if (current == null) return;
+    current.empty();
+    update();
+  }
 }
